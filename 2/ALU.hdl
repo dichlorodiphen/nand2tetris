@@ -41,5 +41,38 @@ CHIP ALU {
         ng;      // if (out < 0)  equals 1, else 0
 
     PARTS:
-    //// Replace this comment with your code.
+    // zx: zero x
+    Mux16(a=x, b=false, sel=zx, out=zx-x);
+
+    // nx: negate x
+    Not16(in=zx-x, out=nx-notX);
+    Mux16(a=zx-x, b=nx-notX, sel=nx, out=nx-x);
+
+    // zy: zero y
+    Mux16(a=y, b=false, sel=zy, out=zy-y);
+
+    // ny: negate y
+    Not16(in=zy-y, out=ny-notY);
+    Mux16(a=zy-y, b=ny-notY, sel=ny, out=ny-y);
+    
+    // f: x + y
+    Add16(a=nx-x, b=ny-y, out=f-sum);
+    And16(a=nx-x, b=ny-y, out=f-and);
+    Mux16(a=f-and, b=f-sum, sel=f, out=f-result);
+
+    // no: negate result
+    Not16(in=f-result, out=no-negated);
+    Mux16(a=f-result, b=no-negated, sel=no, out[0..7]=no-result-first, out[8..14]=no-result-second, out[15]=no-result-last);
+    
+    // zr: out == 0
+    Or8Way(in=no-result-first, out=zr-nonzero-first);
+    Or8Way(in[0..6]=no-result-second, in[7]=no-result-last, out=zr-nonzero-second);
+    Or(a=zr-nonzero-first, b=zr-nonzero-second, out=zr-nonzero);
+    Not(in=zr-nonzero, out=zr);
+
+    // ng: out < 0
+    And(a=no-result-last, b=true, out=ng);
+
+    // out
+    And16(a[0..7]=no-result-first, a[8..14]=no-result-second, a[15]=no-result-last, b=true, out=out);
 }
